@@ -40,15 +40,23 @@ Different tokenization strategies produce different Lego brick sizes:
 
 Tokenization has gone through several generations, each trading off vocabulary size against context understanding:
 
-| Era | Approach | Model Example | Vocab Size | Trade-off |
-|-----|----------|---------------|------------|-----------|
-| **2017** | **BPE** (character + frequency merging) | Original Transformer | ~40,000 | Good balance of coverage and speed |
-| **2019** | **Byte-level BPE** (operates on raw bytes, no UNK token) | GPT-2 | 50,257 | Every possible text is tokenizable; no unknown tokens |
-| **2020** | **Byte-level BPE** + larger vocab | GPT-3 | 50,257 | Same size as GPT-2, but better merges from more data |
-| **2023** | **Byte-level BPE** + much larger vocab | GPT-4 | ~100,256 | More words as single tokens → faster inference |
-| **2024** | **Byte-level BPE** + largest yet | GPT-4o | ~200,000 | Maximum coverage for multi-lingual multi-modal input |
+| Era | Approach | Paper / Authors | Model Example | Vocab Size | Key Innovation |
+|-----|----------|-----------------|---------------|------------|----------------|
+| **2015** | **BPE for NMT** | Sennrich et al. (ACL 2016) | Neural MT systems | ~32k | First subword method for NMT; frequency-based merging |
+| **2017** | **BPE** (character-level) | *"Attention Is All You Need"* — Vaswani et al. | Original Transformer | ~40,000 | Applied BPE to transformer; good balance of coverage/speed |
+| **2018** | **WordPiece** | *"BERT"* — Devlin et al. (NAACL 2019) | BERT, DistilBERT | 30,522 | Likelihood-based merging (not frequency); used by BERT |
+| **2018** | **SentencePiece / Unigram** | Kudo & Richardson (EMNLP 2018) | T5, mT5, XLNet, ALBERT | 32k | Language-independent; trains tokenizer as probabilistic model |
+| **2019** | **Byte-level BPE** | *"GPT-2"* — Radford et al. | GPT-2 | 50,257 | Operates on raw bytes (0–255); **no UNK token ever**; every text tokenizable |
+| **2020** | **Byte-level BPE** (same vocab, better merges) | *"GPT-3"* — Brown et al. | GPT-3 | 50,257 | Same vocab as GPT-2; merges trained on 500B+ tokens |
+| **2022** | **BPE + larger vocab** | *"PaLM"* — Chowdhery et al. | PaLM | 256,000 | Larger vocab for multilingual; SentencePiece-based |
+| **2023** | **Byte-level BPE** + much larger vocab | *"GPT-4"* — OpenAI | GPT-4 | ~100,256 | More words as single tokens → shorter sequences, faster inference |
+| **2023** | **BPE + massive vocab** | *"LLaMA 2"* — Touvron et al. | LLaMA 2 | 32,000 | Smaller vocab but optimized for code + multilingual |
+| **2024** | **Byte-level BPE** + largest yet | *"GPT-4o"* — OpenAI | GPT-4o | ~200,000 | Maximum coverage for multi-lingual multi-modal input |
+| **2024** | **BPE + 128k vocab** | *"Qwen 2"* — Qwen Team | Qwen 2 | 151,643 | Optimized for Chinese/English/code; tiktoken-based |
 
 The progression is clear: **models want larger vocabularies** so common words become single tokens (reducing sequence length and compute). The 2017 transformer's 40k BPE seems tiny by today's standards — GPT-4o uses 5× that — but the core algorithm (frequency-based subword merging) is the same.
+
+> 💡 **Key insight**: The tokenizer is a **fixed preprocessing step** — it doesn't learn during model training. The same tokenizer must be used at inference that was used during training. This is why tokenizer choice is a critical architectural decision made *before* training.
 
 > 🧪 **Try this mental experiment**: Tokenize `"Hello"` and `" Hello"` (with a leading space). With BPE, these often produce **different** token IDs because the space changes how the encoder matches subword pieces. A model treats `"Hello"` and `" Hello"` as distinct concepts — whitespace matters!
 
@@ -232,16 +240,29 @@ x = embedded + pe  # broadcast across batch dimension
 
 ### 🕰️ How Positional Encoding Evolved
 
-The 2017 sinusoidal PE is far from the only option. Here's how position encoding has evolved alongside transformer architectures:
+The 2017 sinusoidal PE is far from the only option. Here's the complete evolution of position encoding methods from 2017–2025:
 
-| Year | Method | Key Idea | Used By | Why It Changed |
-|------|--------|----------|---------|----------------|
-| **2017** | **Sinusoidal PE** (fixed sine/cosine waves) | Original Transformer (Vaswani et al.) | Pedagogical, simple, extrapolates to any length | Birth of the transformer — needed *some* position signal |
-| **2018** | **Learned absolute PE** (trainable embedding per position) | BERT (Devlin et al.) | More flexible, each position learns its own vector | Why fix the encoding when the model can learn the best one? |
-| **2021** | **RoPE** (rotary position embedding, rotates Q/K vectors) | LLaMA, Mistral, Qwen (Su et al.) | Encodes *relative* position directly in attention; better long-context extrapolation | Absolute positions don't help when two tokens need distance-awareness |
-| **2023** | **RoPE with frequency scaling** (YaRN, NTK-aware scaling) | LLaMA 2, LLaMA 3 | Extends context window 32×+ without retraining | "My 4k context model needs to handle 128k tokens" |
+| Year | Method | Paper / Authors | Key Innovation | Why an Improvement | Adopted By |
+|------|--------|-----------------|----------------|--------------------|------------|
+| **2017** | **Sinusoidal PE** | *"Attention Is All You Need"* — Vaswani et al. (NeurIPS 2017) | Fixed sine/cosine functions of different frequencies added to token embeddings | First principled position encoding; no learned params; theoretically extrapolates | Original Transformer, early translation models |
+| **2018** | **Learned Absolute PE** | *"BERT"* — Devlin et al. (NAACL 2019) | Trainable embedding table `max_seq_len × d_model` added to token embeddings | More flexible — model learns task-appropriate position representations | BERT, GPT-1/2, ViT, RoBERTa, XLNet, ALBERT, ELECTRA |
+| **2018** | **Relative Position Representations (RPR)** | Shaw et al. (NAACL 2018) | Learned embeddings based on relative offset between key and query; added to attention logits | First truly relative encoding; better length generalization | Music Transformer, early relative models |
+| **2019** | **T5 Relative Position Bias** | Raffel et al. (JMLR 2020) | Learned scalar bias per relative offset, bucketed logarithmically (32 buckets) | Simplified RPR — scalar instead of vector; log bucketing handles long sequences with constant params | **T5, mT5, Flan-T5, UL2, ByT5** — influenced PaLM, PaLM-2, Gemini |
+| **2019** | **Transformer-XL Relative PE** | Dai et al. (ACL 2019) | Relative encoding + segment-level recurrence for cross-segment flow | First to handle arbitrarily long contexts via recurrence | Transformer-XL, XLNet |
+| **2021 (Apr)** | **RoPE (Rotary Position Embedding)** | Su et al. (arXiv Apr 2021, Neurocomputing 2024) | **Multiplies** Q/K by rotation matrix; dot product depends only on relative position | Paradigm shift — multiplicative not additive; natural distance decay; FlashAttention-compatible; no learned params | **LLaMA 1/2/3, Mistral, Qwen, Gemma, GPT-NeoX, PaLM, Yi, DeepSeek, Baichuan, ChatGLM** — dominant in modern open LLMs |
+| **2021 (Aug)** | **ALiBi (Attention with Linear Biases)** | Press et al. (ICLR 2022) | Adds linear bias to attention scores proportional to distance; each head has different slope | Unmatched extrapolation — train 1024, test 2048+ with no degradation; 11% faster, 11% less memory | **MPT, BLOOM, BLOOMZ** — also multimodal: Video LLaMA, PaLI-X, Flamingo |
+| **2022** | **xPos (Extrapolatable PE)** | Sun et al. (ACL 2023) | Adds exponential decay to RoPE's rotation matrix; "attention resolution" metric | Fixes RoPE's oscillation at long distances; stabilizes long-range attention | Research models, LEX Transformer |
+| **2023 (Jun)** | **Position Interpolation (PI)** | Chen et al. (Meta) | Linearly down-scales position indices to map extended positions into trained range | First principled RoPE extension: 2K→32K with ~1000 fine-tuning steps | LLaMA fine-tuned variants (LongChat, Guanaco, Vicuna) |
+| **2023 (Jul)** | **NTK-Aware Scaling** | bloc97 (community) | Changes RoPE base frequency instead of scaling positions; preserves high frequencies | Better than PI — preserves nearby token discrimination; ~2× extension without fine-tuning | Code LLaMA (base=1M), community models |
+| **2023 (Aug)** | **YaRN** | Peng et al. (ICLR 2024) | NTK-by-parts + temperature scaling; categorizes dimensions by frequency band | 10× fewer tokens and 2.5× fewer steps than PI; 128k context on LLaMA | **Code LLaMA, Qwen, Mistral extended, Nous Research models** |
+| **2023 (Oct)** | **FIRE / CLEX / PoSE** | Li et al. (ICLR 2024), Chen et al. (NeurIPS 2024), Zhu et al. | Learnable MLP for relative positions; Neural ODE continuous scaling; randomized position training | Adaptive to task; continuous scaling; no fine-tuning needed | Research models |
+| **2024 (Jan)** | **Self-Extend** | Jin et al. (ICML 2024) | Bi-level attention: neighbor (standard) + grouped (floor-divided positions) | Extends context **without any fine-tuning** — only modifies inference code | Any RoPE-based LLM at inference |
+| **2024 (Feb)** | **LongRoPE** | Ding et al. (ICML 2024) | Non-uniform interpolation search + progressive strategy + readjustment | **First to reach 2M+ tokens**; 1K fine-tuning steps; preserves short-context | **LLaMA-2, Mistral, Microsoft Phi-3** |
+| **2024 (May)** | **CoPE (Contextual PE)** | Golovneva et al. (ICLR 2025) | Positions measured by **context-dependent gates** (σ(q·k)) instead of token count | Paradigm shift — position is semantic (words, nouns, sentences), not token index | Research models up to 100M params |
+| **2024** | **DAPE / CAPE / HoPE** | Zheng et al. (NeurIPS 2024), Chen et al. (ACL 2025) | MLP takes attention value + position for dynamic bias; HoPE removes low-frequency decay | Semantically adaptive PE; HoPE challenges "long-term decay" assumption | Research models |
+| **2025** | **Wavelet-based PE** | Multiple groups (ACL 2025) | Wavelet transforms for multi-resolution position encoding; heads organize into wavelet bands | Signal-processing foundations; multi-resolution analysis; interpretable | Research models, theoretical analysis |
 
-> 🔄 **Why start here**: Sinusoidal PE is the original 2017 design — fixed, deterministic, no learned parameters. It's easy to understand and debug. **What changes later**: Phase 2 (Chapter 08) replaces this with **RoPE**, which encodes *relative* position and handles long contexts better.
+> 🔄 **Why start here**: Sinusoidal PE is the original 2017 design — fixed, deterministic, no learned parameters. It's easy to understand and debug. **What changes later**: Phase 2 (Chapter 08) replaces this with **RoPE**, which encodes *relative* position and handles long contexts better. The context extension methods (PI, YaRN, LongRoPE) are Phase 4 topics.
 
 > 🧠 **Implementation detail**: The PE matrix is typically stored with `register_buffer('pe', pe, persistent=False)`. This makes it part of the model's state (moves to GPU with `.to(device)`) but doesn't save it in checkpoints — since it's deterministic, we just recompute it when loading the model. A common gotcha: forgetting to move the PE to the same device as the embeddings.
 
