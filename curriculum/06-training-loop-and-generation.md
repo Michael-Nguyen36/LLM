@@ -593,16 +593,19 @@ The optimizer — the algorithm that actually updates weights — has been one o
 | **2019** | **LAMB** | Layer-wise Adaptive Moments (adjusts LR per layer) | Large-batch pretraining (You et al., Google) | Scales batch sizes to 64K+ without destabilizing; LR grows with batch |
 | **2022** | **8-bit AdamW** | Quantizes optimizer states to 8-bit | Memory-constrained training (Dettmers et al.) | Cuts optimizer memory 4× — a 7B model's Adam states go from ~56GB to ~14GB |
 | **2023** | **Lion** | Sign-based updates (no momentum buffers needed) | Google internal models | 2× less memory than Adam (no momentum squared buffer); sometimes faster convergence |
-| **2023+** | **PEFT (LoRA/QLoRA)** | Train small adapter matrices instead of full weights | Fine-tuning everything (Hu et al., Dettmers) | Optimizer works on <1% of parameters; GPU memory drops from "impossible" to "laptop" |
 | **2024** | **Muon** | Orthogonalized momentum (Newton-Schulz on gradients) | modded-nanogpt speedrun (KellerJordan) | Treats gradient matrix as a "rotation" problem; 2× faster wall-clock convergence than AdamW for transformers |
 | **2024–25** | **C-AdamW** (Cautious) | One-line code change: restrict momentum to positive updates | Any AdamW training (Cautious Optimizers paper) | Up to 1.47× speedup on major pretraining tasks; preserves convergence guarantees |
 | **2025** | **VSGD** | Treats gradients as latent variables (variational inference) | Advanced research (VSGD paper) | Extra accuracy with comparable computational cost; still experimental |
 
 > 🟢 **Focus for Phase 1**: We use plain **AdamW with lr=3e-4**. It's the safest, best-understood default. The table shows where optimizer research is heading — each row trades off one axis (memory, speed, batch size, simplicity) for another. You don't need to memorize them, but knowing they exist helps you make informed choices when you scale up.
 
+> 💡 **Note on PEFT/LoRA**: The row for **PEFT (LoRA/QLoRA)** was removed from the optimizer table because it's not an optimizer — it's a **parameter-efficient fine-tuning framework**. LoRA freezes the base model and trains small adapter matrices (typically <1% of parameters). The optimizer (AdamW, etc.) still runs, but only on the adapter weights. This is a Phase 4+ topic.
+
 For Phase 1, **AdamW with `lr=3e-4`** is the safest choice. AdamW is well-understood, stable, and has excellent default hyperparameters. Muon is exciting but requires more tuning — we cover it in Phase 4 as an advanced optimization topic.
 
 The learning rate `3e-4` is a standard starting point. Higher rates can speed up training but risk instability; lower rates are safer but slower.
+
+> 🕰️ **Learning Rate Schedules**: The original 2017 transformer used a specific "Noam" schedule — linear warmup for 4000 steps, then inverse square root decay. GPT-2 used cosine decay with warmup. Modern training often uses cosine decay with warmup (e.g., 1000 warmup steps, then cosine to 10% of peak LR). **We use a constant LR for simplicity** in Phase 1, but production training requires a schedule to stabilize early training and converge properly.
 
 ---
 

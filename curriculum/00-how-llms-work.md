@@ -85,9 +85,9 @@ When generating, we control how the model picks tokens:
 ```mermaid
 xychart-beta
     title "Model Scale (Parameters)"
-    x-axis ["Your first<br/>model", "GPT-2", "Llama 3<br/>8B", "GPT-4", "GPT-5<br/>rumored"]
-    y-axis "Parameters (billions)" 0 --> 350
-    bar [0.005, 1.5, 8, 100, 300]
+    x-axis ["Your first<br/>model", "GPT-2", "Llama 3<br/>8B", "GPT-4", "DeepSeek-V3"]
+    y-axis "Parameters (billions)" 0 --> 700
+    bar [0.005, 1.5, 8, 100, 671]
 ```
 
 Don't be intimidated. We'll start with a model smaller than 5 million parameters (fits on a laptop), understand every line, and then you'll see how the same principles scale to models 10,000x larger.
@@ -101,6 +101,43 @@ Don't be intimidated. We'll start with a model smaller than 5 million parameters
 - **Training is expensive** (millions of dollars for frontier models). **Inference is cheap** (pennies per query).
 - **The four ingredients** are: Tokenization → Architecture → Training → Inference Strategy.
 - **Everything in this curriculum** builds toward understanding the second ingredient — the Transformer architecture — in full detail.
+
+---
+
+## 🟢 Check Your Understanding
+
+Test yourself before moving to the next chapter.
+
+1. **What is the fundamental task an LLM is trained to do?**
+
+    <details>
+    <summary>Show answer</summary>
+    Predict the next token given the previous tokens. Everything else (answering questions, writing code, summarizing) emerges from this simple next-token prediction task.
+    </details>
+
+2. **What are the four ingredients that make an LLM work?**
+
+    <details>
+    <summary>Show answer</summary>
+    1. **Tokenization** — converting text to numbers
+    2. **Architecture** — the Transformer (attention + feed-forward layers)
+    3. **Training** — learning from trillions of tokens by predicting the next one
+    4. **Inference Strategy** — how we sample tokens during generation (temperature, top-k, etc.)
+    </details>
+
+3. **Why does the model output probabilities instead of a single token?**
+
+    <details>
+    <summary>Show answer</summary>
+    The model outputs a probability distribution over the entire vocabulary. We then sample from this distribution (using temperature, top-k, etc.) to pick the actual next token. This sampling introduces controlled randomness, making generations feel natural rather than repetitive.
+    </details>
+
+4. **What's the difference between training and inference?**
+
+    <details>
+    <summary>Show answer</summary>
+    **Training**: The model sees input + target tokens, computes loss, and updates weights to reduce error. This is slow and expensive (GPU clusters, weeks). **Inference**: The model only sees input tokens, predicts the next token, and generates text. No weights are updated. This is fast and cheap (single GPU, milliseconds).
+    </details>
 
 ---
 

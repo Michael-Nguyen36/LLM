@@ -99,7 +99,7 @@ Fintech Cross-Cut
 
 ## Quick Glossary
 
-Don't know a term? Check the [reference/glossary.md](reference/glossary.md) — but here are the most common ones you'll encounter:
+Don't know a term? Check the [reference/glossary.md](../reference/glossary.md) — but here are the most common ones you'll encounter:
 
 | Term | One-Liner |
 |------|-----------|

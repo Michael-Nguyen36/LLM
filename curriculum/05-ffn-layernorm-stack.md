@@ -95,7 +95,7 @@ The activation function inside the FFN has been steadily upgraded as researchers
 |------|-----------|---------|---------|-----|
 | **2017** | **ReLU** | `max(0, x)` | Original Transformer (Vaswani et al.) | Simple, fast, works — but dies for negative inputs |
 | **2018** | **GELU** | `x × Φ(x)` (smooth sigmoid-like curve) | GPT-2, BERT (Devlin, Brown et al.) | Smooth, non-zero for negatives, dropped ~10% of weights vs ReLU's hard zero |
-| **2023** | **SwiGLU** | `swish(xW) ⊗ (xV)`, 3 weight matrices | LLaMA, PaLM, Mistral, Gemini | Significantly better quality; adds an extra weight matrix (still 4× total with gating trick) |
+| **2023** | **SwiGLU** | `SiLU(xW_gate) ⊗ (xW_up) W_down`, 3 weight matrices | LLaMA, PaLM, Mistral, Gemini | Significantly better quality; uses `8/3 × d_model` hidden dim (not `4×`) to match parameter count of standard FFN |
 | **2024** | **ReLU²** | `max(0, x)²` | Nemotron-4, modded-nanogpt speedrun | Quadratic instead of linear — dead-simple but empirically stronger than GELU |
 
 The **4× expansion ratio** (`d_ff = 4 × d_model`) has remained remarkably stable since 2017. Even SwiGLU — which mathematically uses 3 matrices (not 2) — achieves 4× effective width through dimension tricks.
@@ -243,6 +243,18 @@ def forward(self, x):
     x = self.norm2(x + self.ffn(x))    # post-norm: LayerNorm AFTER add
     return x
 ```
+
+### Dropout (2017 Original)
+
+The original 2017 transformer applies **Dropout (p=0.1)** at three key points:
+
+1. **After attention output** — before the residual addition
+2. **After FFN output** — before the residual addition  
+3. **After embedding + positional encoding** — before the first block
+
+Dropout randomly zeros out activations during training, forcing the model to learn redundant representations and preventing over-reliance on specific neurons. It's a critical regularizer for the 2017 architecture.
+
+> 🔄 **Why we omit it in Phase 1**: Our tiny models (d_model=16, 4 layers) don't overfit on TinyShakespeare. Dropout adds complexity without benefit at this scale. **What changes later**: Phase 2 adds Dropout back when we scale up.
 
 ### 🕰️ How the Block Architecture Evolved
 

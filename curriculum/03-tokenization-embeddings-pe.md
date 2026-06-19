@@ -49,7 +49,7 @@ Tokenization has gone through several generations, each trading off vocabulary s
 | **2019** | **Byte-level BPE** | *"GPT-2"* — Radford et al. | GPT-2 | 50,257 | Operates on raw bytes (0–255); **no UNK token ever**; every text tokenizable |
 | **2020** | **Byte-level BPE** (same vocab, better merges) | *"GPT-3"* — Brown et al. | GPT-3 | 50,257 | Same vocab as GPT-2; merges trained on 500B+ tokens |
 | **2022** | **BPE + larger vocab** | *"PaLM"* — Chowdhery et al. | PaLM | 256,000 | Larger vocab for multilingual; SentencePiece-based |
-| **2023** | **Byte-level BPE** + much larger vocab | *"GPT-4"* — OpenAI | GPT-4 | ~100,256 | More words as single tokens → shorter sequences, faster inference |
+| **2023** | **Byte-level BPE** + much larger vocab | *"GPT-4"* — OpenAI | GPT-4 | 100,277 | More words as single tokens → shorter sequences, faster inference |
 | **2023** | **BPE + massive vocab** | *"LLaMA 2"* — Touvron et al. | LLaMA 2 | 32,000 | Smaller vocab but optimized for code + multilingual |
 | **2024** | **Byte-level BPE** + largest yet | *"GPT-4o"* — OpenAI | GPT-4o | ~200,000 | Maximum coverage for multi-lingual multi-modal input |
 | **2024** | **BPE + 128k vocab** | *"Qwen 2"* — Qwen Team | Qwen 2 | 151,643 | Optimized for Chinese/English/code; tiktoken-based |

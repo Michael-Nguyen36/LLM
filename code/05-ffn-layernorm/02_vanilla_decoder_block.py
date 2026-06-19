@@ -34,14 +34,14 @@ class VanillaDecoderBlock(nn.Module):
     """One transformer decoder block with post-norm (2017 style).
 
     Layout:
-        x = LayerNorm(x + MultiHeadAttention(x))   ← post-norm
-        x = LayerNorm(x + FFN(x))                   ← post-norm
+        x = LayerNorm(x + Dropout(MultiHeadAttention(x)))   ← post-norm
+        x = LayerNorm(x + Dropout(FFN(x)))                   ← post-norm
 
     "Post" means LayerNorm comes AFTER the residual addition.
 
     Weight init: N(0, 0.02) for all parameters > 1D.
     """
-    def __init__(self, d_model=16, n_heads=4):
+    def __init__(self, d_model=16, n_heads=4, dropout=0.1):
         super().__init__()
         self.attn = CausalMultiHeadAttention(d_model, n_heads)
         self.norm1 = nn.LayerNorm(d_model)
@@ -51,6 +51,7 @@ class VanillaDecoderBlock(nn.Module):
             nn.Linear(d_model * 4, d_model),
         )
         self.norm2 = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
         self._init_weights()
 
     def _init_weights(self):
@@ -61,8 +62,8 @@ class VanillaDecoderBlock(nn.Module):
 
     def forward(self, x):
         # Post-norm: LayerNorm AFTER residual addition
-        x = self.norm1(x + self.attn(x))
-        x = self.norm2(x + self.ffn(x))
+        x = self.norm1(x + self.dropout(self.attn(x)))
+        x = self.norm2(x + self.dropout(self.ffn(x)))
         return x
 
 

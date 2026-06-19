@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # 02_mlp.py — Build a tiny Multi-Layer Perceptron (MLP) with nn.Module.
 # Same pattern used in LLMs — just WAY bigger, with attention layers added.

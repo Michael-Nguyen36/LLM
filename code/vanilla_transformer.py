@@ -8,7 +8,6 @@ Contains: CausalMultiHeadAttention, VanillaDecoderBlock, VanillaDecoderOnlyTrans
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 
 # ── Self-contained attention (same as Chapter 04) ──────────────────
 
@@ -49,10 +48,10 @@ class VanillaDecoderBlock(nn.Module):
     """One transformer decoder block with post-norm (2017 style).
 
     Layout:
-        x = LayerNorm(x + MultiHeadAttention(x))   ← post-norm
-        x = LayerNorm(x + FFN(x))                   ← post-norm
+        x = LayerNorm(x + Dropout(MultiHeadAttention(x)))   ← post-norm
+        x = LayerNorm(x + Dropout(FFN(x)))                   ← post-norm
     """
-    def __init__(self, d_model=16, n_heads=4):
+    def __init__(self, d_model=16, n_heads=4, dropout=0.1):
         super().__init__()
         self.attn = CausalMultiHeadAttention(d_model, n_heads)
         self.norm1 = nn.LayerNorm(d_model)
@@ -62,11 +61,12 @@ class VanillaDecoderBlock(nn.Module):
             nn.Linear(d_model * 4, d_model),
         )
         self.norm2 = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         # Post-norm: LayerNorm AFTER residual addition
-        x = self.norm1(x + self.attn(x))
-        x = self.norm2(x + self.ffn(x))
+        x = self.norm1(x + self.dropout(self.attn(x)))
+        x = self.norm2(x + self.dropout(self.ffn(x)))
         return x
 
 
@@ -78,7 +78,7 @@ class VanillaDecoderOnlyTransformer(nn.Module):
     Sinusoidal positional encodings, post-norm LayerNorm, ReLU FFN.
     Weight init: N(0, 0.02) for all parameters with dim ≥ 2.
     """
-    def __init__(self, vocab_size=65, d_model=128, n_heads=4, n_layers=4, max_seq_len=256):
+    def __init__(self, vocab_size=65, d_model=128, n_heads=4, n_layers=4, max_seq_len=256, dropout=0.1):
         super().__init__()
         self.max_seq_len = max_seq_len
         self.d_model = d_model
@@ -92,8 +92,10 @@ class VanillaDecoderOnlyTransformer(nn.Module):
         pe[0, :, 1::2] = torch.cos(pos / inv_freq)
         self.register_buffer('pe', pe, persistent=False)
 
+        self.dropout = nn.Dropout(dropout)
+
         self.blocks = nn.ModuleList([
-            VanillaDecoderBlock(d_model, n_heads) for _ in range(n_layers)
+            VanillaDecoderBlock(d_model, n_heads, dropout) for _ in range(n_layers)
         ])
         self.ln_final = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, vocab_size, bias=False)
@@ -123,6 +125,7 @@ class VanillaDecoderOnlyTransformer(nn.Module):
         )
         # Token embeddings + positional encoding
         x = self.token_embed(idx) + self.pe[:, :T, :]
+        x = self.dropout(x)
 
         # Pass through decoder blocks
         for block in self.blocks:

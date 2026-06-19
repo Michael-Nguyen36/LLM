@@ -141,6 +141,29 @@ This is an **educational curriculum**, not a production codebase. The companion 
 | `DELIVERY_GUIDE.md` | Session plans, facilitator notes, mixed-room strategy |
 | `reference/glossary.md` | 35+ terms defined |
 | `code/vanilla_transformer.py` | Shared module — canonical vanilla transformer implementation |
+| `reference-modern/` | **Modern transformer reference (Phase 2+ target)** — Pre-norm, RMSNorm, SwiGLU, RoPE, KV cache, weight tying |
+
+### Reference Modern Implementation
+
+The `reference-modern/` directory contains a **production-style transformer** that represents the Phase 2+ target architecture:
+
+| File | Description |
+|------|-------------|
+| `model.py` | Modern decoder-only transformer with Pre-norm, RMSNorm, SwiGLU, RoPE, KV cache, weight tying |
+| `train.py` | Training loop with LR warmup, cosine decay, gradient accumulation, mixed precision |
+| `data.py` | Data loading with BPE tokenization, proper DataLoader, distributed support |
+| `config.py` | Configuration dataclass for model/training hyperparameters |
+| `sample.py` | Generation with KV cache, temperature, top-p, repetition penalty |
+
+**Key differences from Phase 1 vanilla code:**
+- Pre-norm (LayerNorm before sublayer) instead of post-norm
+- RMSNorm instead of LayerNorm (no mean centering, ~15% faster)
+- SwiGLU instead of ReLU (gated activation, better quality)
+- RoPE instead of sinusoidal PE (relative position, better extrapolation)
+- KV cache for fast autoregressive generation
+- Weight tying (shared embedding ↔ output head)
+- Proper LR schedule (warmup + cosine decay)
+- Mixed precision (FP16/BF16) support
 
 ### Companion Code Verification
 

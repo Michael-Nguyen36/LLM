@@ -88,11 +88,13 @@ Attention does the same thing in math: **compare Q against every K, turn those c
 
 ```
 Attention(Q, K, V) = softmax(Q @ K^T / sqrt(d_k)) @ V
-                    ──┬───────────────┬──   ─┬─
-                      │                │      └── Weighted sum of Values
-                      │                └── Attention weights (how much to look at each token)
-                      └── How relevant is each token to the query?
+                     ──┬───────────────┬──   ─┬─
+                       │                │      └── Weighted sum of Values
+                       │                └── Attention weights (how much to look at each token)
+                       └── How relevant is each token to the query?
 ```
+
+> 🕰️ **Before Scaled Dot-Product Attention**: The 2017 transformer wasn't the first attention mechanism. **Additive attention** (Bahdanau et al., 2014) used a small neural network to score query-key pairs: `score = v^T tanh(W_q q + W_k k)`. **Dot-product attention** (Luong et al., 2015) simplified this to `q · k` but lacked the scaling factor. The 2017 innovation was adding `1/√d_k` scaling to prevent gradient vanishing in high dimensions — making attention stable for large models.
 
 ### The Two Roles of Each Token
 

@@ -72,7 +72,8 @@ if __name__ == "__main__":
     from code.vanilla_transformer import VanillaDecoderOnlyTransformer
 
     # Build vocabulary from the training data
-    text = open("data/tinyshakespeare.txt").read()
+    with open("data/tinyshakespeare.txt", encoding="utf-8") as f:
+        text = f.read()
     chars = sorted(set(text))
     stoi = {ch: i for i, ch in enumerate(chars)}
     itos = {i: ch for i, ch in enumerate(chars)}

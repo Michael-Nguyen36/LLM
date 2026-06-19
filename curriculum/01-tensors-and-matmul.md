@@ -24,28 +24,28 @@ block-beta
     
     block:scalar
         columns 1
-        a["5"]
+        s1["5"]
     end
     space
     block:vector
         columns 3
-        a["3"] b["7"] c["-2"]
+        v1["3"] v2["7"] v3["-2"]
     end
     space
     block:matrix
         columns 3
-        a["1"] b["2"] c["3"]
-        d["4"] e["5"] f["6"]
+        m1["1"] m2["2"] m3["3"]
+        m4["4"] m5["5"] m6["6"]
     end
     
     space
     
     block:tensor3d
         columns 3
-        a["[ [1,2],"]
-        b["  [3,4] ]"]
-        c["[ [5,6],"]
-        d["  [7,8] ]"]
+        t1["[ [1,2],"]
+        t2["  [3,4] ]"]
+        t3["[ [5,6],"]
+        t4["  [7,8] ]"]
     end
 ```
 

@@ -35,10 +35,11 @@ class CausalMultiHeadAttention(nn.Module):
         return self.out(out)
 
 
-# Test
-mha = CausalMultiHeadAttention(d_model=16, n_heads=4)
-x = torch.randn(1, 6, 16)
-out = mha(x)
-print(f"Input:  {x.shape}")
-print(f"Output: {out.shape}")
-print(f"✓ Multi-head causal attention works")
+if __name__ == "__main__":
+    # Test
+    mha = CausalMultiHeadAttention(d_model=16, n_heads=4)
+    x = torch.randn(1, 6, 16)
+    out = mha(x)
+    print(f"Input:  {x.shape}")
+    print(f"Output: {out.shape}")
+    print(f"✓ Multi-head causal attention works")

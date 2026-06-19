@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # ---------------------------------------------------------------------------
 # 01_linear_layer.py
 # Goal: Show that a neural-network layer is just:
-#           output = weight @ input + bias
+#           output = input @ weight.T + bias
 # (with the weight matrix transposed for convenience).
 # ---------------------------------------------------------------------------
 

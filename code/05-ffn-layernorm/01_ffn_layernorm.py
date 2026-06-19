@@ -55,15 +55,17 @@ out = mini(x)
 print(f"Mini FFN block: {x.shape} → {out.shape}")
 print(f"  Parameters: {sum(p.numel() for p in mini.parameters()):,}")
 
-# Verify LayerNorm statistics
-print()
-print("Verification: LayerNorm output stats over 1000 random inputs...")
-means, stds = [], []
-for _ in range(1000):
-    x_rand = torch.randn(16, 16) * 5.0 + 3.0  # random mean/std
-    ln_out = nn.LayerNorm(16)(x_rand)
-    means.append(ln_out.mean().item())
-    stds.append(ln_out.std().item())
-print(f"  Mean across runs: {torch.tensor(means).mean():.4f} (target: 0.0)")
-print(f"  Std  across runs: {torch.tensor(stds).mean():.4f} (target: 1.0)")
-print("✓ LayerNorm correctly normalizes any input distribution")
+if __name__ == "__main__":
+    # Verify LayerNorm statistics
+    print()
+    print("Verification: LayerNorm output stats over 1000 random inputs...")
+    means, stds = [], []
+    ln = nn.LayerNorm(16)
+    for _ in range(1000):
+        x_rand = torch.randn(16, 16) * 5.0 + 3.0  # random mean/std
+        ln_out = ln(x_rand)
+        means.append(ln_out.mean().item())
+        stds.append(ln_out.std().item())
+    print(f"  Mean across runs: {torch.tensor(means).mean():.4f} (target: 0.0)")
+    print(f"  Std  across runs: {torch.tensor(stds).mean():.4f} (target: 1.0)")
+    print("✓ LayerNorm correctly normalizes any input distribution")

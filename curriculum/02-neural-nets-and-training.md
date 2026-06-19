@@ -205,10 +205,10 @@ block-beta
     space
     block:llm
         columns 1
-            e["GPT-5"]
-            f["~300 layers"]
-            g["~300,000,000,000 params"]
-            h["100,000 GPUs<br/>for training"]
+            e["DeepSeek-V3"]
+            f["~700 layers"]
+            g["~671,000,000,000 params"]
+            h["~2,000 GPUs<br/>for training"]
     end
     
     style mlp fill:#e8f5e9
